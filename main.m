@@ -52,7 +52,8 @@ for scanIdx = 1 : 1 : N
     %    local points map and local grid map (coarse)
     if miniUpdated
         localMap = ExtractLocalMap(map.points, pose, scan, borderSize);
-        gridMap  = OccuGrid(localMap, pixelSize);
+        gridMap1 = OccuGrid(localMap, pixelSize);
+        gridMap2 = OccuGrid(localMap, pixelSize/2);
     end
     
     % 2. Predict current pose using constant velocity motion model
@@ -63,11 +64,15 @@ for scanIdx = 1 : 1 : N
     end
         
     % 3. Fast matching
-    [pose, ~] = FastMatch(gridMap, scan, pose_guess, fastResolution);
+    if miniUpdated
+        [pose, ~] = FastMatch(gridMap1, scan, pose_guess, fastResolution);
+    else
+        [pose, ~] = FastMatch(gridMap2, scan, pose_guess, fastResolution);
+    end
     
     % 4. Refine the pose using smaller pixels
-    gridMap = OccuGrid(localMap, pixelSize/2);
-    [pose, hits] = FastMatch(gridMap, scan, pose, fastResolution/2);
+    % gridMap = OccuGrid(localMap, pixelSize/2);
+    [pose, hits] = FastMatch(gridMap2, scan, pose, fastResolution/2);
     %----------------------------------------------------------------------
     
     
@@ -75,7 +80,7 @@ for scanIdx = 1 : 1 : N
     dp = abs(DiffPose(map.keyscans(end).pose, pose));
     if dp(1)>miniUpdateDT || dp(2)>miniUpdateDT || dp(3)>miniUpdateDR
         miniUpdated = true;
-        [map, pose] = AddAKeyScan(map, gridMap, scan, pose, hits,...
+        [map, pose] = AddAKeyScan(map, gridMap2, scan, pose, hits,...
                         pixelSize, bruteResolution, 0.1, deg2rad(3));
     else
         miniUpdated = false;
