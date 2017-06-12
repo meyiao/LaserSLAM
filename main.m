@@ -100,4 +100,4 @@ for scanIdx = 1 : 1 : N
     
 end
 
-close(vip);
+close(cfig);
